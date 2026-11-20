@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مصروفي">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>مصروفي</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <div class="eyebrow">إدارة أموالك ببساطة</div>
+    <h1>مصروفي <span>₺</span></h1>
+  </div>
+  <button id="exportBtn" class="iconbtn" title="نسخة احتياطية" aria-label="نسخة احتياطية">⇩</button>
+</header>
+
+<main>
+  <section class="balance-card">
+    <div class="balance-head"><span>الرصيد الحالي</span><span class="currency">TRY · ليرة تركية</span></div>
+    <div id="balance" class="balance">₺0,00</div>
+    <div class="stats">
+      <div><span>إجمالي الدخل</span><strong id="income">₺0</strong></div>
+      <div><span>إجمالي المصروف</span><strong id="expense">₺0</strong></div>
+    </div>
+  </section>
+
+  <section class="voice-card">
+    <div class="voice-copy">
+      <div class="voice-title">سجّل عملية بصوتك</div>
+      <p>احكي بشكل طبيعي، مثلاً: صرفت ١٢٠ ليرة أكل</p>
+    </div>
+    <button id="voiceBtn" class="mic-btn" aria-label="إدخال صوتي"><span>🎙</span></button>
+    <div class="voice-hint" id="voiceHint">اضغط الميكروفون أو استخدم اختصار الآيفون</div>
+    <textarea id="voiceText" class="voice-text" placeholder="النص الذي قلته سيظهر هنا للمراجعة..." rows="2"></textarea>
+    <button id="parseBtn" class="primary full">حلّل الكلام</button>
+  </section>
+
+  <section id="draftSection" class="panel hidden">
+    <div class="section-head"><h2>راجع العمليات قبل الحفظ</h2><span id="draftCount" class="count"></span></div>
+    <div id="drafts"></div>
+    <div class="actions">
+      <button id="saveDrafts" class="primary">حفظ العمليات</button>
+      <button id="discardDrafts" class="secondary">إلغاء</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="section-head">
+      <h2>ملخص الشهر</h2>
+      <input id="monthPicker" type="month" aria-label="اختر الشهر">
+    </div>
+    <div class="summary-grid">
+      <div class="summary-item"><span>الدخل</span><strong id="monthIncome">₺0</strong></div>
+      <div class="summary-item"><span>المصروف</span><strong id="monthExpense">₺0</strong></div>
+      <div class="summary-item"><span>الصافي</span><strong id="monthNet">₺0</strong></div>
+    </div>
+    <div class="section-head category-head"><h2>أين صرفت؟</h2></div>
+    <div id="categories" class="category-list"><div class="empty">لا توجد مصروفات في هذا الشهر</div></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-head">
+      <h2>آخر العمليات</h2>
+      <button id="addManual" class="textbtn">+ إضافة يدوية</button>
+    </div>
+    <div id="transactions" class="transactions"><div class="empty">لم تسجل أي عملية بعد</div></div>
+  </section>
+
+  <section id="manualPanel" class="panel hidden">
+    <div class="section-head"><h2>إضافة عملية يدوية</h2><button id="closeManual" class="textbtn">إغلاق</button></div>
+    <div class="form-grid">
+      <label>نوع العملية<select id="mType"><option value="expense">مصروف</option><option value="income">دخل</option><option value="transfer">تحويل / مساعدة</option><option value="debt">سلفة / دين</option></select></label>
+      <label>المبلغ<input id="mAmount" type="number" inputmode="decimal" min="0" placeholder="مثلاً 250"></label>
+      <label>التصنيف<select id="mCategory"></select></label>
+      <label>الوصف<input id="mNote" type="text" placeholder="مثلاً غداء أو راتب"></label>
+      <label>التاريخ<input id="mDate" type="date"></label>
+    </div>
+    <button id="saveManual" class="primary full">حفظ العملية</button>
+  </section>
+
+  <section class="privacy-note">🔒 بياناتك محفوظة على هذا الجهاز فقط. صدّر نسخة احتياطية بشكل دوري حتى لا تفقد سجلك عند تغيير الجهاز أو مسح بيانات Safari.</section>
+</main>
+
+<nav class="bottom-nav">
+  <a href="#top" class="active">⌂ <span>الرئيسية</span></a>
+  <button id="navAdd">＋ <span>إضافة</span></button>
+  <button id="navBackup">⇩ <span>نسخة احتياطية</span></button>
+</nav>
+
+<div id="toast" class="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
