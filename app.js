@@ -145,8 +145,83 @@ function showDrafts(items){
  <label>الوصف<input data-k="note" data-i="${i}" value="${esc(t.note)}"></label>
  </div></div>`).join("");
 }
-$("parseBtn").onclick=()=>{const s=$("voiceText").value.trim();if(!s)return toast("اكتب أو أمْلِ العملية أولاً");const p=parseVoice(s);if(!p.length)return toast("لم أستطع تحديد المبلغ. جرّب قول الرقم بوضوح مثل: ١٢٠ ليرة.");showDrafts(p)};
-$("voiceBtn").onclick=()=>{toast("افتح الإملاء الصوتي…");window.location.href="shortcuts://run-shortcut?name=Masroofi%20Voice"};
+$("parseBtn").onclick=()=>{const s=$("voiceText").value.trim();if(!s)return toast("اكتب العملية أولاً");const p=parseVoice(s);if(!p.length)return toast("لم أستطع تحديد المبلغ. اكتب المبلغ بوضوح.");if(confidentVoice(p,s)){saveVoiceAutomatically(p);$("voiceText").value=""}else showDrafts(p)};
+let speechRecognition=null, recording=false, speechFinal="", speechHandled=false;
+function setMicState(active, message){
+ recording=active;
+ const btn=$("voiceBtn"), hint=$("voiceHint");
+ btn.classList.toggle("recording",active);
+ btn.setAttribute("aria-pressed",active?"true":"false");
+ btn.querySelector("span").textContent=active?"⏹":"🎙";
+ hint.textContent=message || (active?"عم اسمعك… اضغط الميكروفون مرة ثانية لإنهاء التسجيل":"اضغط الميكروفون وابدأ الحكي، واضغطه مرة ثانية للحفظ");
+}
+function finishVoice(){
+ if(speechHandled)return;
+ speechHandled=true;
+ const spoken=($("voiceText").value||"").trim();
+ setMicState(false,"");
+ if(!spoken){toast("ما وصلني كلام واضح. جرّب مرة ثانية.");return;}
+ const items=parseVoice(spoken);
+ if(!items.length){toast("سمعت كلامك، لكن ما قدرت أحدد المبلغ. العملية بقيت بالنص ولم تُحفظ.");return;}
+ if(confidentVoice(items,spoken)){
+  saveVoiceAutomatically(items);
+  $("voiceText").value="";
+ }else{
+  showDrafts(items);
+  toast("فهمت الكلام، بس بدي تأكيدك قبل الحفظ.");
+ }
+}
+function startVoice(){
+ const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SpeechRecognition){
+  toast("المتصفح لا يدعم التسجيل المباشر. استخدم إملاء لوحة مفاتيح الآيفون داخل مربع النص.");
+  $("voiceText").focus();
+  return;
+ }
+ try{
+  speechFinal="";
+  speechHandled=false;
+  $("voiceText").value="";
+  speechRecognition=new SpeechRecognition();
+  speechRecognition.lang="ar-SA";
+  speechRecognition.continuous=true;
+  speechRecognition.interimResults=true;
+  speechRecognition.onstart=()=>setMicState(true,"عم اسمعك… احكي براحتك، واضغط الميكروفون مرة ثانية لما تخلص");
+  speechRecognition.onresult=e=>{
+   let interim="";
+   for(let i=e.resultIndex;i<e.results.length;i++){
+    const piece=e.results[i][0]?.transcript||"";
+    if(e.results[i].isFinal)speechFinal+=piece+" ";
+    else interim+=piece;
+   }
+   $("voiceText").value=(speechFinal+interim).trim();
+  };
+  speechRecognition.onerror=e=>{
+   if(e.error==="not-allowed"||e.error==="service-not-allowed"){
+    setMicState(false,"");
+    toast("اسمح للمتصفح باستخدام الميكروفون من إعدادات الموقع.");
+   }else if(e.error!=="no-speech"&&e.error!=="aborted"){
+    setMicState(false,"");
+    toast("صار خطأ بالتعرف الصوتي. جرّب مرة ثانية.");
+   }
+  };
+  speechRecognition.onend=()=>{
+   if(recording){
+    $("voiceText").value=speechFinal.trim();
+    finishVoice();
+   }
+  };
+  speechRecognition.start();
+ }catch(err){
+  setMicState(false,"");
+  toast("ما قدرت أشغّل الميكروفون. تأكد من إذن الميكروفون وجرب من Safari.");
+ }
+}
+$("voiceBtn").onclick=()=>{
+ if(recording){
+  try{speechRecognition?.stop()}catch(e){finishVoice()}
+ }else startVoice();
+};
 $("drafts").addEventListener("change",e=>{const el=e.target,i=Number(el.dataset.i),k=el.dataset.k;if(!k||!drafts[i])return;drafts[i][k]=k==="amount"?Number(el.value):el.value;if(k==="type"){drafts[i].category=CATS[el.value][0];showDrafts(drafts)}});
 $("saveDrafts").onclick=()=>{if(drafts.some(t=>!t.amount||t.amount<=0))return toast("تأكد من المبالغ قبل الحفظ");txs.push(...drafts.map(t=>({...t,created:Date.now()})));save();drafts=[];$("draftSection").classList.add("hidden");$("voiceText").value="";toast("تم حفظ العمليات")};
 $("discardDrafts").onclick=()=>{$("draftSection").classList.add("hidden");drafts=[]};
@@ -172,4 +247,5 @@ function ingestQuery(){
  history.replaceState({},document.title,location.pathname);
 }
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+$("voiceHint").textContent="اضغط الميكروفون وابدأ الحكي، واضغطه مرة ثانية حتى يحلل ويحفظ";
 render();ingestQuery();
